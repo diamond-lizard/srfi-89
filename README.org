@@ -1,6 +1,8 @@
 * SRFI-89: Optional positional and named parameters
 ** Abstract
 This SRFI specifies the define* and lambda* special forms. These forms extend the R5RS define and lambda special forms to simplify the use of optional positional and named parameters. Optional positional parameters, optional named parameters and required named parameters are covered by this SRFI. The formal parameter list syntax specified in this SRFI is different from the syntax used by Common Lisp and the DSSSL languages but nevertheless offers similar functionality and a nicer syntax. Formal parameter lists which conform to the R5RS syntax have the same meaning as in R5RS.
+
+For more information see: [[https://srfi.schemers.org/srfi-89/][SRFI-89: Optional positional and named parameters]]
 ** Rationale
 In the software development process it is common to add parameters to a procedure to generalize its function. The new procedure is more general because it can do everything the old procedure does and more. As the software matures new features and parameters are added at each refinement iteration. This process can quickly lead to procedures with a high number of parameters.
 
@@ -26,7 +28,7 @@ So far so good. Now we will generalize further by adding 3 parameters, in order:
 
 The last two calls show weaknesses of optional positional parameters. In the call (number->string 1234567 10 0 #\space " ") the default value of radix, min-width and pad-char had to be explicitly passed when only the thousand-sep parameter receives a non-default value. Moreover, optional parameters are by definition used less frequently than required parameters and it is harder for the programmer to remember their position (e.g. which parameter in the call (number->string 1234567 10 10 #\0) must be changed to get a hexadecimal number?).
 
-This SRFI solves these issues by providing optional named parameters in addition to optional positional parameters. Optional named parameters are not new; Ada, Common Lisp, Dylan, the DSSSL standard and several implementations of Scheme use them as well. The idea is for the caller to identify the parameter that is being passed by its name rather than by position. This is done by prefixing in the actual parameter list each optional named parameter by a keyword object with the same name. Keyword objects are specified in SRFI 88 (Keyword objects), but basically they look like a symbol that ends in a colon and are self evaluating. Assuming the API of the number->string procedure is changed so that radix is an optional positional parameter and min-width, pad-char, and thousand-sep are optional named parameters the following calls would achieve the same result as our last example:
+This SRFI solves these issues by providing optional named parameters in addition to optional positional parameters. Optional named parameters are not new; Ada, Common Lisp, Dylan, the DSSSL standard and several implementations of Scheme use them as well. The idea is for the caller to identify the parameter that is being passed by its name rather than by position. This is done by prefixing in the actual parameter list each optional named parameter by a keyword object with the same name. Keyword objects are specified in [[https://srfi.schemers.org/srfi-88/][SRFI 88 (Keyword objects)]], but basically they look like a symbol that ends in a colon and are self evaluating. Assuming the API of the number->string procedure is changed so that radix is an optional positional parameter and min-width, pad-char, and thousand-sep are optional named parameters the following calls would achieve the same result as our last example:
 
     (number->string 1234567)                        ==>  "1234567"
     (number->string 1234567 16)                     ==>  "12D687"
@@ -63,7 +65,7 @@ DSSSL's handling of optional parameters is very close to Common Lisp's. DSSSL us
 
 Unfortunately several people, including the author of this SRFI, feel that the DSSSL formal parameter list syntax is messy. Although the DSSSL syntax has widespread support among the implementations of Scheme with optional parameters we think there is a high likelihood that these implementations of Scheme may evolve to include this proposal (a majority of the implementors of these systems have confirmed that they are willing to consider implementing a new approach). Therefore this SRFI specifies a parameter passing mechanism that has similar functionality to DSSSL, but a more elegant formal parameter list syntax.
 
-The case-lambda special form, SRFI 16 (Syntax for procedures of variable arity), which is proposed for R6RS, allows the definition of procedures with variable arity. Each possible arity of the procedure is a clause in the case-lambda form. Although it is possible to express optional positional parameters with case-lambda this can be cumbersome when there are more than a few clauses that share a common computation. For N optional parameters it takes O(N^2) code space and there is repetition:
+The case-lambda special form, [[https://srfi.schemers.org/srfi-16/][SRFI 16 (Syntax for procedures of variable arity)]], which is proposed for R6RS, allows the definition of procedures with variable arity. Each possible arity of the procedure is a clause in the case-lambda form. Although it is possible to express optional positional parameters with case-lambda this can be cumbersome when there are more than a few clauses that share a common computation. For N optional parameters it takes O(N^2) code space and there is repetition:
 
     (let ((common-part (lambda (a b c d e) (+ a b c d e))))
       (case-lambda
@@ -264,7 +266,7 @@ Here are some examples:
        ==>  displays on the current output port:
                 <i id=water class=molecule><big>H</big><small>2</small><big>O</big></i>
 ** Implementation
-In the following implementation we assume that SRFI 88 (Keyword objects) is supported by the Scheme implementation. The define-macro special form is used to define the define* and lambda* special forms.
+In the following implementation we assume that [[https://srfi.schemers.org/srfi-88/][SRFI 88 (Keyword objects)]] is supported by the Scheme implementation. The define-macro special form is used to define the define* and lambda* special forms.
 
 The macros expand into efficient R5RS code. A source lambda* form whose parameter list matches the R5RS syntax expands to a lambda-expression with the same parameter list. In this case there is no overhead when the extended parameter list syntax is not used.
 
