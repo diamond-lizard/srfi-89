@@ -1,0 +1,10 @@
+;;; srfi-89.egg -*- Scheme -*- vim: ft=scheme:
+
+((author "Marc Feeley")
+ (maintainer "Sergey Goldgaber")
+ (synopsis "SRFI-89: Optional positional and named parameters")
+ (version "0.1")
+ (category lang-exts)
+ (test-dependencies test)
+ (license "BSD")
+ (components (extension srfi-89)))
