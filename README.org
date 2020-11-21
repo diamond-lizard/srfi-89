@@ -1,74 +1,34 @@
-Optional positional and named parameters
-
-Author
-
+* SRFI-89: Optional positional and named parameters
+** Author
 Marc Feeley
+** Abstract
+This SRFI specifies the define* and lambda* special forms. These forms extend the R5RS define and lambda special forms to simplify the use of optional positional and named parameters. Optional positional parameters, optional named parameters and required named parameters are covered by this SRFI. The formal parameter list syntax specified in this SRFI is different from the syntax used by Common Lisp and the DSSSL languages but nevertheless offers similar functionality and a nicer syntax. Formal parameter lists which conform to the R5RS syntax have the same meaning as in R5RS.
+** Rationale
+In the software development process it is common to add parameters to a procedure to generalize its function. The new procedure is more general because it can do everything the old procedure does and more. As the software matures new features and parameters are added at each refinement iteration. This process can quickly lead to procedures with a high number of parameters.
 
-Status
+In this iterative software refinement scenario the use of optional parameters with default values is an extensible approach. By making the new parameters optional and giving them appropriate default values, it is possible to make the procedure's new API a strict extension of the previous API. A caller which uses the previous API does not have to be modified for the new API. It just works.
 
-This SRFI is currently in final status. Here is an explanation of each status that a SRFI can hold. To provide input on this SRFI, please send email to srfi-89@nospam
-srfi.schemers.org. To subscribe to the list, follow these instructions. You can access previous messages via the mailing list archive.
+A procedure's parameters can be divided into the required and the optional parameters. A caller must always specify explicitly all the required parameters. If a caller does not specify an optional parameter then the callee will substitute a default value. Required and optional parameters can be passed by position; the position of a parameter in the actual parameters is used to match it up with a parameter in the procedure's formal parameter list. Positional matching works well for required parameters, but not so well for optional parameters because to line up an optional parameter to the correct position the value of the previous optional parameters must be given whether equal to the default value or not. This greatly reduces the usefulness of optional parameters as soon as there is more than one optional parameter.
 
-  * Received: 2006-04-01
-  * Draft: 2006-04-11--2006-07-10
-  * Revised: 2006-05-05
-  * Revised: 2007-03-28
-  * Final: 2007-07-10
-
-Abstract
-
-This SRFI specifies the define* and lambda* special forms. These forms extend the R5RS define and lambda special forms to simplify the use of optional positional and named
-parameters. Optional positional parameters, optional named parameters and required named parameters are covered by this SRFI. The formal parameter list syntax specified in
-this SRFI is different from the syntax used by Common Lisp and the DSSSL languages but nevertheless offers similar functionality and a nicer syntax. Formal parameter lists
-which conform to the R5RS syntax have the same meaning as in R5RS.
-
-Rationale
-
-In the software development process it is common to add parameters to a procedure to generalize its function. The new procedure is more general because it can do
-everything the old procedure does and more. As the software matures new features and parameters are added at each refinement iteration. This process can quickly lead to
-procedures with a high number of parameters.
-
-In this iterative software refinement scenario the use of optional parameters with default values is an extensible approach. By making the new parameters optional and
-giving them appropriate default values, it is possible to make the procedure's new API a strict extension of the previous API. A caller which uses the previous API does
-not have to be modified for the new API. It just works.
-
-A procedure's parameters can be divided into the required and the optional parameters. A caller must always specify explicitly all the required parameters. If a caller
-does not specify an optional parameter then the callee will substitute a default value. Required and optional parameters can be passed by position; the position of a
-parameter in the actual parameters is used to match it up with a parameter in the procedure's formal parameter list. Positional matching works well for required
-parameters, but not so well for optional parameters because to line up an optional parameter to the correct position the value of the previous optional parameters must be
-given whether equal to the default value or not. This greatly reduces the usefulness of optional parameters as soon as there is more than one optional parameter.
-
-Let's take the number->string procedure as an example and fantasize about its evolution. This procedure takes a required parameter, a number, and converts it to a string
-containing its decimal representation:
+Let's take the number->string procedure as an example and fantasize about its evolution. This procedure takes a required parameter, a number, and converts it to a string containing its decimal representation:
 
     (number->string 1234567)       ==>  "1234567"
 
-To allow converting numbers into a base different from 10, an optional positional parameter is added. This radix parameter, which defaults to 10, is the radix for
-representing the converted number:
+To allow converting numbers into a base different from 10, an optional positional parameter is added. This radix parameter, which defaults to 10, is the radix for representing the converted number:
 
     (number->string 1234567)       ==>  "1234567"
     (number->string 1234567 16)    ==>  "12D687"
 
-So far so good. Now we will generalize further by adding 3 parameters, in order: min-width is the minimum width of the resulting string (padding is added at the beginning
-of the string to left justify the number), pad-char is the padding character, and thousand-sep is a string to insert at every third digit. For backward compatibility these
-parameters default as follows: min-width = 0, pad-char = #\space, and thousand-sep = "". Now we have:
+So far so good. Now we will generalize further by adding 3 parameters, in order: min-width is the minimum width of the resulting string (padding is added at the beginning of the string to left justify the number), pad-char is the padding character, and thousand-sep is a string to insert at every third digit. For backward compatibility these parameters default as follows: min-width = 0, pad-char = #\space, and thousand-sep = "". Now we have:
 
     (number->string 1234567)                   ==>  "1234567"
     (number->string 1234567 16)                ==>  "12D687"
     (number->string 1234567 10 0 #\space " ")  ==>  "1 234 567"
     (number->string 1234567 10 10 #\0)         ==>  "0001234567"
 
-The last two calls show weaknesses of optional positional parameters. In the call (number->string 1234567 10 0 #\space " ") the default value of radix, min-width and
-pad-char had to be explicitly passed when only the thousand-sep parameter receives a non-default value. Moreover, optional parameters are by definition used less
-frequently than required parameters and it is harder for the programmer to remember their position (e.g. which parameter in the call (number->string 1234567 10 10 #\0)
-must be changed to get a hexadecimal number?).
+The last two calls show weaknesses of optional positional parameters. In the call (number->string 1234567 10 0 #\space " ") the default value of radix, min-width and pad-char had to be explicitly passed when only the thousand-sep parameter receives a non-default value. Moreover, optional parameters are by definition used less frequently than required parameters and it is harder for the programmer to remember their position (e.g. which parameter in the call (number->string 1234567 10 10 #\0) must be changed to get a hexadecimal number?).
 
-This SRFI solves these issues by providing optional named parameters in addition to optional positional parameters. Optional named parameters are not new; Ada, Common
-Lisp, Dylan, the DSSSL standard and several implementations of Scheme use them as well. The idea is for the caller to identify the parameter that is being passed by its
-name rather than by position. This is done by prefixing in the actual parameter list each optional named parameter by a keyword object with the same name. Keyword objects
-are specified in SRFI 88 (Keyword objects), but basically they look like a symbol that ends in a colon and are self evaluating. Assuming the API of the number->string
-procedure is changed so that radix is an optional positional parameter and min-width, pad-char, and thousand-sep are optional named parameters the following calls would
-achieve the same result as our last example:
+This SRFI solves these issues by providing optional named parameters in addition to optional positional parameters. Optional named parameters are not new; Ada, Common Lisp, Dylan, the DSSSL standard and several implementations of Scheme use them as well. The idea is for the caller to identify the parameter that is being passed by its name rather than by position. This is done by prefixing in the actual parameter list each optional named parameter by a keyword object with the same name. Keyword objects are specified in SRFI 88 (Keyword objects), but basically they look like a symbol that ends in a colon and are self evaluating. Assuming the API of the number->string procedure is changed so that radix is an optional positional parameter and min-width, pad-char, and thousand-sep are optional named parameters the following calls would achieve the same result as our last example:
 
     (number->string 1234567)                        ==>  "1234567"
     (number->string 1234567 16)                     ==>  "12D687"
@@ -76,12 +36,9 @@ achieve the same result as our last example:
     (number->string 1234567 10 pad-char: #\0
                                min-width: 10)       ==>  "0001234567"
 
-The call is often more verbose, but the meaning of the actual parameters is much clearer. Note that the ordering of the named parameters in the actual parameter list does
-not have to match the order in the formal parameter list. Also, in the last two calls, because radix is a positional parameter and some named parameters are passed, radix
-must be specified explicitly. To avoid this, radix would have to be turned into an optional named parameter.
+The call is often more verbose, but the meaning of the actual parameters is much clearer. Note that the ordering of the named parameters in the actual parameter list does not have to match the order in the formal parameter list. Also, in the last two calls, because radix is a positional parameter and some named parameters are passed, radix must be specified explicitly. To avoid this, radix would have to be turned into an optional named parameter.
 
-There are situations when it is useful to allow optional named parameters before required positional parameters or other optional parameters. Constructors for documents
-with attributes, such as HTML code, are a compelling example:
+There are situations when it is useful to allow optional named parameters before required positional parameters or other optional parameters. Constructors for documents with attributes, such as HTML code, are a compelling example:
 
     (html-table border: 3
                 cellpadding: 4
@@ -92,11 +49,9 @@ with attributes, such as HTML code, are a compelling example:
                 (html-tr (html-td "1")
                          (html-td "2")))
 
-Here, the HTML code constructors' attributes are specified using optional named parameters. The body of an HTML tag consists of the HTML code produced by the parameters
-that follow the last optional named parameter. There is no upper limit on the number of parameters.
+Here, the HTML code constructors' attributes are specified using optional named parameters. The body of an HTML tag consists of the HTML code produced by the parameters that follow the last optional named parameter. There is no upper limit on the number of parameters.
 
-Another example is an n-ary print procedure which displays an arbitrary number of parameters. The destination port is an optional named parameter, defaulting to the
-current output port, that must come first:
+Another example is an n-ary print procedure which displays an arbitrary number of parameters. The destination port is an optional named parameter, defaulting to the current output port, that must come first:
 
     (define x 2)
 
@@ -106,19 +61,11 @@ current output port, that must come first:
         (set-car! x #f)
         (print port: error-port "pair expected but got " x "\n"))
 
-DSSSL's handling of optional parameters is very close to Common Lisp's. DSSSL uses special markers (#!optional, #!key, and #!rest) in the formal parameter list to delimit
-sections where the required, optional positional, optional named, and rest parameters are given. When a parameter is optional, it is usually wrapped with the default value
-in parentheses, i.e. (param expression). This syntax is used by several Scheme implementations: Bigloo, Chicken, EdScheme, Gambit, Guile (except it uses the notation #:key
-instead of #!key), Kawa, and Jade.
+DSSSL's handling of optional parameters is very close to Common Lisp's. DSSSL uses special markers (#!optional, #!key, and #!rest) in the formal parameter list to delimit sections where the required, optional positional, optional named, and rest parameters are given. When a parameter is optional, it is usually wrapped with the default value in parentheses, i.e. (param expression). This syntax is used by several Scheme implementations: Bigloo, Chicken, EdScheme, Gambit, Guile (except it uses the notation #:key instead of #!key), Kawa, and Jade.
 
-Unfortunately several people, including the author of this SRFI, feel that the DSSSL formal parameter list syntax is messy. Although the DSSSL syntax has widespread
-support among the implementations of Scheme with optional parameters we think there is a high likelihood that these implementations of Scheme may evolve to include this
-proposal (a majority of the implementors of these systems have confirmed that they are willing to consider implementing a new approach). Therefore this SRFI specifies a
-parameter passing mechanism that has similar functionality to DSSSL, but a more elegant formal parameter list syntax.
+Unfortunately several people, including the author of this SRFI, feel that the DSSSL formal parameter list syntax is messy. Although the DSSSL syntax has widespread support among the implementations of Scheme with optional parameters we think there is a high likelihood that these implementations of Scheme may evolve to include this proposal (a majority of the implementors of these systems have confirmed that they are willing to consider implementing a new approach). Therefore this SRFI specifies a parameter passing mechanism that has similar functionality to DSSSL, but a more elegant formal parameter list syntax.
 
-The case-lambda special form, SRFI 16 (Syntax for procedures of variable arity), which is proposed for R6RS, allows the definition of procedures with variable arity. Each
-possible arity of the procedure is a clause in the case-lambda form. Although it is possible to express optional positional parameters with case-lambda this can be
-cumbersome when there are more than a few clauses that share a common computation. For N optional parameters it takes O(N^2) code space and there is repetition:
+The case-lambda special form, SRFI 16 (Syntax for procedures of variable arity), which is proposed for R6RS, allows the definition of procedures with variable arity. Each possible arity of the procedure is a clause in the case-lambda form. Although it is possible to express optional positional parameters with case-lambda this can be cumbersome when there are more than a few clauses that share a common computation. For N optional parameters it takes O(N^2) code space and there is repetition:
 
     (let ((common-part (lambda (a b c d e) (+ a b c d e))))
       (case-lambda
@@ -134,22 +81,15 @@ is equivalent to this SRFI's:
     (lambda* ((a 1) (b 2) (c 3) (d 4) (e 5))
       (+ a b c d e))
 
-Moreover, case-lambda does not support optional named parameters, which are important for APIs with many optional parameters. The case-lambda form can be viewed as a
-parameter specification approach that is orthogonal to the one specified in this SRFI. Indeed, an implementation of Scheme could conceivably extend the case-lambda special
-form so that it also supports the parameter list syntax specified in this SRFI:
+Moreover, case-lambda does not support optional named parameters, which are important for APIs with many optional parameters. The case-lambda form can be viewed as a parameter specification approach that is orthogonal to the one specified in this SRFI. Indeed, an implementation of Scheme could conceivably extend the case-lambda special form so that it also supports the parameter list syntax specified in this SRFI:
 
     (case-lambda
       (((foo: foo 1) (bar: bar 2)) ...)
       (((red: red 3) (green: green 4)) ...))
+** Specification
+In the grammar rules given below we use the following syntactic superscript postfix operators on non-terminals: ? (optional), + (one or more), and * (zero or more). The parentheses are terminal symbols (they do not mean grouping like in EBNF grammar notation).
 
-Specification
-
-In the grammar rules given below we use the following syntactic superscript postfix operators on non-terminals: ? (optional), + (one or more), and * (zero or more). The
-parentheses are terminal symbols (they do not mean grouping like in EBNF grammar notation).
-
-Scheme's syntax for <definition> and <lambda expression> must be extended to support define* and lambda*. The non-terminal <extended def formals> covers the syntax of the
-R5RS non-terminal <def formals>. A formal parameter list is composed of a sequence of 3 sections: a <positional section>, an optional <named section>, and a <rest
-section>. The <positional section> and <named section> can be in any order and the <rest section> must come last. The grammar rules are:
+Scheme's syntax for <definition> and <lambda expression> must be extended to support define* and lambda*. The non-terminal <extended def formals> covers the syntax of the R5RS non-terminal <def formals>. A formal parameter list is composed of a sequence of 3 sections: a <positional section>, an optional <named section>, and a <rest section>. The <positional section> and <named section> can be in any order and the <rest section> must come last. The grammar rules are:
 
     <definition> --> ( define <variable> <expression> )
                   |  ( define ( <variable> <def formals> ) <body> )
@@ -185,8 +125,7 @@ section>. The <positional section> and <named section> can be in any order and t
 
 All the variables and keywords in a formal parameter list must be distinct.
 
-The semantics of the <extended formals> and <extended def formals> non-terminals is an extension of the respective R5RS non-terminals. When a procedure is called with the
-actual arguments a1, a2, ... the following steps are performed:
+The semantics of the <extended formals> and <extended def formals> non-terminals is an extension of the respective R5RS non-terminals. When a procedure is called with the actual arguments a1, a2, ... the following steps are performed:
 
  1. Initialize A to a newly created list containing the actual arguments in order, i.e. (a1 a2 ...).
  2. Process the <positional section> and <named section> in the order they occur in the formal parameter list:
@@ -326,23 +265,14 @@ Here are some examples:
 
        ==>  displays on the current output port:
                 <i id=water class=molecule><big>H</big><small>2</small><big>O</big></i>
+** Implementation
+In the following implementation we assume that SRFI 88 (Keyword objects) is supported by the Scheme implementation. The define-macro special form is used to define the define* and lambda* special forms.
 
-Implementation
+The macros expand into efficient R5RS code. A source lambda* form whose parameter list matches the R5RS syntax expands to a lambda-expression with the same parameter list. In this case there is no overhead when the extended parameter list syntax is not used.
 
-In the following implementation we assume that SRFI 88 (Keyword objects) is supported by the Scheme implementation. The define-macro special form is used to define the
-define* and lambda* special forms.
+When the source lambda* form uses the extended parameter list syntax with the named parameters after the positional parameters, it expands to a R5RS lambda-expression accepting the required parameters and a rest parameter. The rest parameter is then scanned to process the optional positional parameters. For optional named parameters a perfect hash table is used to quickly validate them and locate them in the parameter list. The keyword hashing currently uses the name of the keyword but a faster approach, which would require implementation dependent changes to the runtime system, is to assign a unique integer (serial number) to each keyword and to hash that.
 
-The macros expand into efficient R5RS code. A source lambda* form whose parameter list matches the R5RS syntax expands to a lambda-expression with the same parameter list.
-In this case there is no overhead when the extended parameter list syntax is not used.
-
-When the source lambda* form uses the extended parameter list syntax with the named parameters after the positional parameters, it expands to a R5RS lambda-expression
-accepting the required parameters and a rest parameter. The rest parameter is then scanned to process the optional positional parameters. For optional named parameters a
-perfect hash table is used to quickly validate them and locate them in the parameter list. The keyword hashing currently uses the name of the keyword but a faster
-approach, which would require implementation dependent changes to the runtime system, is to assign a unique integer (serial number) to each keyword and to hash that.
-
-A Scheme system could do a better job than the ``user level'' implementation presented here by eliminating the construction of a rest parameter list and by stack
-allocating the vector containing the values of the named parameters. To give a rough idea of the speed improvement, a trivial procedure with 10 optional named parameters
-and called with 5 named parameters runs 14 times faster and generates no garbage when the Gambit compiler's builtin optional parameter passing mechanism is used.
+A Scheme system could do a better job than the ``user level'' implementation presented here by eliminating the construction of a rest parameter list and by stack allocating the vector containing the values of the named parameters. To give a rough idea of the speed improvement, a trivial procedure with 10 optional named parameters and called with 5 named parameters runs 14 times faster and generates no garbage when the Gambit compiler's builtin optional parameter passing mechanism is used.
 
 ;------------------------------------------------------------------------------
 
@@ -677,20 +607,11 @@ and called with 5 named parameters runs 14 times faster and generates no garbage
                           (loop (cddr args)))))))))))
 
 ;------------------------------------------------------------------------------
-
-Copyright
-
+** Copyright
 Copyright (C) Marc Feeley (2006). All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software
-without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
-CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-Editor: Donovan Kolbly
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
